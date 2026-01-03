@@ -1,7 +1,7 @@
-[![Discord Invite](https://img.shields.io/discord/1381331343031402628?color=4A55CC&amp;label=Discord&amp;logo=discord&amp;style=for-the-badge)](https://homelabik.cz/discord)
+<!-- [![Discord Invite](https://img.shields.io/discord/1381331343031402628?color=4A55CC&amp;label=Discord&amp;logo=discord&amp;style=for-the-badge)](https://homelabik.cz/discord)
 [![Github Followers](https://img.shields.io/github/followers/Ondra9071?logo=GitHub&amp;style=for-the-badge)](https://github.com/Ondra9071)
 [![Buymeacoffee](https://img.shields.io/badge/-buy_me_a%C2%A0coffee-FFBF00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/ondra907)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/ond%C5%99ej-pacovsk%C3%BD-017699278/)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/ond%C5%99ej-pacovsk%C3%BD-017699278/) -->
 # Moje HomeLab
 Ahoj! 👋<br>
 Repo slouží jako kolekce configů, scriptů a dalších užitečných věcí do moji HomeLab. Nechávám ho veřejné, aby i ostatní mohli chytnout trochu inspirace. <br>
