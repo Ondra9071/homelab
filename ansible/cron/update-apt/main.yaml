@@ -1,0 +1,41 @@
+---
+- name: update and upgrade apt packages
+  hosts: debian
+  become: true
+  gather_facts: true
+
+  vars:
+    slack_webhook_url: "{{ lookup('env','SLACK_WEBHOOK_URL', path='{{ playbook_dir }}/.env') }}"
+
+  tasks:
+    - name: Bootstrap Python3 and apt module
+      raw: apt update && apt install -y python3 python3-apt
+      changed_when: false
+
+    - name: Gather facts
+      setup:
+
+    - name: Update apt packages
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Check if reboot required
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: Send Slack notification if reboot needed
+      ansible.builtin.uri:
+        url: "{{ slack_webhook_url }}"
+        method: POST
+        body_format: json
+        body:
+          text: "🔄 **Reboot required** on {{ inventory_hostname }} @channel"
+      when: 
+        - reboot_required.stat.exists
+        - slack_webhook_url is defined
+        - slack_webhook_url != ""
+
+    - name: Show reboot status
+      ansible.builtin.debug:
+        msg: "{{ 'Reboot required on ' + inventory_hostname if reboot_required.stat.exists else 'OK' }}"

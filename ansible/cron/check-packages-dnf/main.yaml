@@ -1,0 +1,22 @@
+---
+- name: Install essential dnf packages
+  hosts: centos
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Check and install
+      ansible.builtin.dnf:
+        name:
+          - sudo
+          - nano
+          - curl
+          - wget
+          - git
+          - net-tools
+          - bind-utils
+          - traceroute
+          - tcpdump
+          - unzip
+        state: present
+        update_cache: yes

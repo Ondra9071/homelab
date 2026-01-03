@@ -1,0 +1,17 @@
+---
+- name: Deploy all SSH public keys
+  hosts: debian
+  gather_facts: false
+  become: true
+
+  vars:
+    ssh_keys_dir: "{{ playbook_dir }}/keys"
+    target_user: "srv"
+
+  tasks:
+    - name: Deploy pubs from /keys
+      authorized_key:
+        user: "{{ target_user }}"
+        key: "{{ lookup('file', item) }}"
+        state: present
+      loop: "{{ lookup('fileglob', ssh_keys_dir + '/*.pub', wantlist=true) }}"

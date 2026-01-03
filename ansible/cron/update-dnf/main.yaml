@@ -1,0 +1,47 @@
+---
+- name: update and upgrade dnf packages
+  hosts: centos
+  become: true
+  gather_facts: true
+
+  vars:
+    slack_webhook_url: "{{ lookup('env','SLACK_WEBHOOK_URL', path='{{ playbook_dir }}/.env') }}"
+
+  tasks:
+    - name: Bootstrap Python3 and dnf-utis
+      raw: dnf install -y python3 dnf-plugins-core
+      changed_when: false
+
+    - name: Gather facts
+      setup:
+
+    - name: Install yum-utils as needs-restarting dependency
+      ansible.builtin.dnf:
+        name: yum-utils
+        state: present
+
+    - name: Update dnf packages
+      ansible.builtin.dnf:
+        update_cache: yes
+
+    - name: Check if kernel was updated (needs reboot)
+      ansible.builtin.command: needs-restarting -r
+      register: reboot_check
+      changed_when: false
+      ignore_errors: true
+
+    - name: Send Slack notification if reboot needed
+      ansible.builtin.uri:
+        url: "{{ slack_webhook_url }}"
+        method: POST
+        body_format: json
+        body:
+          text: "🔄 **Reboot required** on {{ inventory_hostname }}. <!channel>"
+      when: 
+        - "'kernel' in reboot_check.stdout"
+        - slack_webhook_url is defined
+        - slack_webhook_url != ""
+
+    - name: Show reboot status
+      ansible.builtin.debug:
+        msg: "{{ 'Reboot required on ' + inventory_hostname if 'kernel' in reboot_check.stdout else 'OK' }}"

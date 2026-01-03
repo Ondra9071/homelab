@@ -1,0 +1,33 @@
+---
+- name: Install essential apt packages
+  hosts: debian
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Check and install
+      ansible.builtin.apt:
+        name:
+          - nano
+          - vim
+          - htop
+          - git
+          - curl
+          - wget
+          - network-manager
+          - ca-certificates
+          - dnsutils
+          - iproute2
+          - traceroute
+          - tcpdump
+          - iperf3
+          - unzip
+          - jq
+          - tree
+          - rsync
+        state: present

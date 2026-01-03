@@ -1,0 +1,119 @@
+---
+- name: Fresh debian (trixie) srv setup
+  hosts: debian
+  gather_facts: false
+  become: true
+  become_method: sudo
+  become_user: root
+  vars:
+    user_name: srv
+    user_group: sudo
+    tz_name: Europe/Prague
+    ssh_key_name: ansible_key.pub
+
+  tasks:
+    - name: Bootstrap
+      raw: bash -c "apt update && apt install -y python3 python3-apt gnupg ca-certificates curl gnupg-agent"
+      changed_when: false
+
+    - name: Gather facts
+      setup:
+
+    - name: Setup sudoers for user
+      copy:
+        dest: /etc/sudoers.d/{{ user_name }}
+        content: "{{ user_name }} ALL=(ALL) NOPASSWD: ALL\n"
+        owner: root
+        group: root
+        mode: '0440'
+      notify: validate sudoers
+
+    - name: Create admin user
+      user:
+        name: "{{ user_name }}"
+        groups: "{{ user_group }}"
+        shell: /bin/bash
+        create_home: yes
+        state: present
+
+    - name: SSH directory
+      file:
+        path: "/home/{{ user_name }}/.ssh"
+        state: directory
+        owner: "{{ user_name }}"
+        group: "{{ user_name }}"
+        mode: '0700'
+
+    - name: Deploy ansible SSH key
+      copy:
+        content: "{{ lookup('file', playbook_dir + '/keys/' + ssh_key_name) }}"
+        dest: "/home/{{ user_name }}/.ssh/authorized_keys"
+        owner: "{{ user_name }}"
+        group: "{{ user_name }}"
+        mode: '0600'
+
+    - name: Full upgrade
+      apt:
+        upgrade: dist
+        update_cache: yes
+
+    - name: Timezone
+      command: timedatectl set-timezone {{ tz_name }}
+      changed_when: false
+
+    - name: Core tools
+      apt:
+        name:
+          - nano
+          - vim
+          - htop
+          - git
+          - curl
+          - wget
+          - network-manager
+          - ca-certificates
+          - dnsutils
+          - iproute2
+          - traceroute
+          - tcpdump
+          - iperf3
+          - unzip
+          - jq
+          - tree
+          - rsync
+        state: present
+        update_cache: yes
+
+    - name: SSH config
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        state: present
+        create: no
+        validate: 'sshd -t -f %s'
+      loop:
+        - { regexp: '^PasswordAuthentication', line: 'PasswordAuthentication no' }
+        - { regexp: '^PermitRootLogin', line: 'PermitRootLogin no' }
+        - { regexp: '^PubkeyAuthentication', line: 'PubkeyAuthentication yes' }
+      notify: restart ssh
+
+    - name: Cleanup snapd
+      apt:
+        name: snapd
+        state: absent
+        autoremove: yes
+
+    - name: Flush handlers
+      meta: flush_handlers
+
+  handlers:
+    - name: validate sudoers
+      command: visudo -cf /etc/sudoers
+      changed_when: false
+
+    - name: restart ssh
+      service:
+        name: ssh
+        state: restarted
+      listen: restart ssh
