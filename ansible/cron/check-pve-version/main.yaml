@@ -1,0 +1,51 @@
+---
+- name: Proxmox version check + Slack alert
+  hosts: pve
+  gather_facts: false
+  become: true
+
+  vars:
+    slack_webhook_url: "{{ lookup('file', playbook_dir + '/.env') | regex_replace('.*SLACK_WEBHOOK_URL=(.*)', '\\1') | trim }}"
+
+  tasks:
+    - name: Installed version
+      ansible.builtin.command: pveversion
+      register: pve_ver
+
+    - name: apt update
+      ansible.builtin.command: apt update
+      register: apt_update
+      failed_when: false
+      changed_when: false
+
+    - name: Latest available pve-manager
+      ansible.builtin.shell: "apt-cache policy pve-manager | grep -Po 'Candidate: \\K[0-9]+\\.[0-9]+\\.[0-9]+' || echo 'N/A'"
+      register: latest_ver_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Extract versions
+      ansible.builtin.set_fact:
+        inst_ver: "{{ pve_ver.stdout | regex_replace('pve-manager/([0-9]+\\.[0-9]+\\.[0-9]+).*', '\\1') }}"
+        latest_ver: "{{ latest_ver_cmd.stdout }}"
+
+    - name: Debug webhook (pro test)
+      ansible.builtin.debug:
+        msg: "Webhook: {{ slack_webhook_url | default('NOT FOUND') }}"
+
+    - name: Send Slack notification if outdated
+      ansible.builtin.uri:
+        url: "{{ slack_webhook_url }}"
+        method: POST
+        body_format: json
+        body:
+          text: "Proxmox outdated on {{ inventory_hostname }}: {{ inst_ver }} -> {{ latest_ver }} <!channel>"
+      when: 
+        - slack_webhook_url is defined
+        - slack_webhook_url != ""
+        - latest_ver != 'N/A' 
+        - latest_ver != inst_ver
+
+    - name: Status
+      ansible.builtin.debug:
+        msg: "{{ inst_ver }} -> {{ latest_ver }}"

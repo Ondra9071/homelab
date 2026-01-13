@@ -5,7 +5,7 @@
   gather_facts: true
 
   vars:
-    slack_webhook_url: "{{ lookup('env','SLACK_WEBHOOK_URL', path='{{ playbook_dir }}/.env') }}"
+    slack_webhook_url: "{{ lookup('file', playbook_dir + '/.env') | regex_replace('.*SLACK_WEBHOOK_URL=(.*)', '\\1') | trim }}"
 
   tasks:
     - name: Bootstrap Python3 and dnf-utis
